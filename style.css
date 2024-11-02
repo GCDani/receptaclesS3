@@ -1,0 +1,327 @@
+/* Définir la taille de la carte pour occuper tout l'écran */
+body, html {
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+#map {
+    height: 70vh;
+    width: 100%;
+    margin-top: 20px;
+}
+h1 {
+    color: white;
+    text-align: center;
+    padding: 10px 10px 10px 10px;
+    background: #3c4a34;
+}
+.leaflet-control-search {
+    background: white;
+    padding: 5px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+}
+
+.search-input {
+    width: 200px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.search-results {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+}
+
+.search-result-item {
+    padding: 5px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.search-result-item:hover {
+    background-color: #f0f0f0;
+}
+/* Conteneur principal pour l'analyse et les statistiques */
+.dashboard-container {
+    display: flex;
+    gap: 15px;
+}
+
+/* Style pour le panneau d'analyse */
+.analysis-panel {
+    flex: 1;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin: 0; /* Suppression de la marge car elle est gérée par le conteneur */
+}
+
+/* Style pour les statistiques */
+.stats {
+    flex: 1;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    height: fit-content;
+}
+
+/* Style pour le titre d'analyse */
+.analysis-panel h2 {
+    color: #2c3e50;
+    font-size: 1.4em;
+    margin-top: 1px;
+    margin-bottom: 25px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid #bbc1b8;
+}
+
+/* Style pour la section des filtres */
+.filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+
+/* Style pour chaque groupe de filtre */
+.filter-group {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+}
+
+/* Style pour les labels des filtres */
+.filter-group label {
+   font-weight: 600;
+   color: #34495e;
+   font-size: 1.1em;
+}
+
+/* Style pour les selects */
+.filter-group select {
+   padding: 10px 12px;
+   border: 2px solid #e0e0e0;
+   border-radius: 6px;
+   background-color: white;
+   font-size: 0.8em;
+   color: #2c3e50;
+   transition: all 0.3s ease;
+   cursor: pointer;
+}
+
+/* Effet hover sur les selects */
+.filter-group select:hover {
+   border-color: #46980b;
+}
+
+/* Effet focus sur les selects */
+.filter-group select:focus {
+   outline: none;
+   border-color: #3498db;
+   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+/* Style pour les options dans les selects */
+.filter-group select option {
+   padding: 10px;
+}
+
+/* Media queries pour la responsivité */
+@media (max-width: 768px) {
+   .analysis-panel {
+       margin: 10px;
+       padding: 10px;
+   }
+
+   .analysis-panel h2 {
+       font-size: 1.2em;
+       margin-bottom: 15px;
+   }
+
+   .filters {
+       grid-template-columns: 1fr;
+       padding: 10px;
+       gap: 10px;
+   }
+
+   .filter-group select {
+       padding: 8px 10px;
+   }
+}
+
+/* Style pour l'animation des filtres */
+.filter-group {
+   transition: transform 0.2s ease;
+}
+
+.filter-group:hover {
+   transform: translateY(-2px);
+}
+.stats {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.stats h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.4em;
+    padding-bottom: 10px;
+    padding-right: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 15px;
+}
+
+#stats-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+    gap: 10px;
+}
+
+#stats-content p {
+    margin: 0;
+    padding: 15px;
+    background: #b9ee99;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+#stats-content p:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#stats-content span {
+    font-size: 3em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-top: 8px;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    #stats-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats {
+        padding: 15px;
+    }
+}
+.charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+.chart-container {
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Media queries pour la responsivité */
+@media (max-width: 1200px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+
+    .analysis-panel, .stats {
+        width: 90%;
+    }
+}
+
+.map-legend {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    max-width: 200px;
+}
+
+.legend-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.legend-section {
+    margin-bottom: 10px;
+}
+
+.legend-subtitle {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.legend-color {
+    width: 15px;
+    height: 15px;
+    margin-right: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-label {
+    font-size: 12px;
+}
+
+/* Styles pour le contrôle de mesure */
+.leaflet-control-measure {
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+
+/* Style pour le contrôle de géolocalisation */
+.leaflet-control-locate {
+    border: 2px solid rgba(0,0,0,0.2);
+    background-clip: padding-box;
+}
+
+.leaflet-control-locate.active {
+    color: #2abd7a;
+}
+
+/* Style pour le bouton de centrage */
+.leaflet-control-center-button {
+    background-color: #fff;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    color: black;
+    font-size: 14px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+
+.leaflet-control-center-button:hover {
+    background-color: #f4f4f4;
+}
+}

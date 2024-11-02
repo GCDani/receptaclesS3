@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte des Coffres</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Feuille de style Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <!-- Feuille de style pour le contrôle de recherche -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <!-- Feuille de style pour les graphiques -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js/dist/Chart.min.css">
+    <!-- Leaflet Measure -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.css">
+    <!-- Leaflet Locate -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css">
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <h1>Coffres au Secteur 3</h1>
+    <div class="dashboard-container">
+        <div class="analysis-panel">
+            <h2>Analyse des données</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="commune-filter">Commune:</label>
+                    <select id="commune-filter">
+                        <option value="">Toutes les communes</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="capacity-filter">Capacité:</label>
+                    <select id="capacity-filter">
+                        <option value="">Toutes les capacités</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="platform-filter">Type de plateforme:</label>
+                    <select id="platform-filter">
+                        <option value="">Tous les types</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="status-filter">Statut:</label>
+                    <select id="status-filter">
+                        <option value="">Tous les statuts</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="stats">
+            <h3>Statistiques</h3>
+            <div id="stats-content">
+                <p>Nombre de sites : <span id="total-coffres">0</span></p>
+                <p>Nombre total de coffres : <span id="total-coffre">0</span></p>
+                <p>Capacité totale: <span id="total-capacity">0</span> m³</p>
+            </div>
+        </div>
+    </div>
+    <div id="map"></div>
+    <div class="charts">
+        <div class="chart-container">
+            <canvas id="capacityChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="statusChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="communeChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="capacityCommuneChart"></canvas>
+        </div>
+
+    </div>
+
+
+    <!-- Script Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Script pour le contrôle de recherche -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <!-- Script pour les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet Measure -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.min.js"></script>
+    <!-- Leaflet Locate -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
+    <!-- Script JavaScript personnalisé -->
+    <script src="app.js"></script>
+</body>
+</html>
