@@ -91,6 +91,32 @@ const CenterViewControl = L.Control.extend({
 // Ajout du contrôle à la carte
 map.addControl(new CenterViewControl());
 
+
+// Ajout du contrôle de plein écran
+const fullscreenControl = L.control.fullscreen({
+    position: 'bottomleft',
+    title: {
+        'false': 'Plein écran',
+        'true': 'Quitter le plein écran'
+    },
+    content: null,
+    forceSeparateButton: true,
+    forcePseudoFullscreen: true
+}).addTo(map);
+
+// Gestion des événements de plein écran
+map.on('enterFullscreen', function(){
+    if(map.isFullscreen()) {
+        console.log('La carte est en mode plein écran');
+    }
+});
+
+map.on('exitFullscreen', function(){
+    if(!map.isFullscreen()) {
+        console.log('La carte a quitté le mode plein écran');
+    }
+});
+
 // ================ FONCTIONS UTILITAIRES ================
 // Fonction pour détruire un graphique existant
 function destroyChart(chartId) {
@@ -108,6 +134,10 @@ function fillSelect(id, values) {
         const option = document.createElement('option');
         option.value = value;
         option.textContent = value;
+        // Si c'est le filtre de statut et la valeur est "actif", le sélectionner par défaut
+        if (id === 'status-filter' && value === 'actif') {
+            option.selected = true;
+        }
         select.appendChild(option);
     });
 }
@@ -401,6 +431,20 @@ function initializeFilters(data, geoJsonLayer) {
     fillSelect('platform-filter', platforms);
     fillSelect('status-filter', statuses);
 
+    // Définir "actif" comme valeur par défaut pour le filtre de statut
+    document.getElementById('status-filter').value = 'actif';
+    
+    // Appliquer les filtres initiaux
+    const initialFilters = {
+        commune: '',
+        capacity: '',
+        platform: '',
+        status: 'actif'  // Définir le statut initial comme "actif"
+    };
+    
+    // Mettre à jour les données avec le filtre initial
+    dataManager.updateFilters(initialFilters);
+
     ['commune-filter', 'capacity-filter', 'platform-filter', 'status-filter'].forEach(id => {
         document.getElementById(id).addEventListener('change', () => {
             const filters = {
@@ -533,7 +577,6 @@ async function loadGeoJson() {
            legend.onAdd = function () {
                const div = L.DomUtil.create('div', 'map-legend');
                div.innerHTML = `
-                   <div class="legend-title">Légende</div>
                    <div class="legend-section">
                        <div class="legend-subtitle">Capacités</div>
                        ${Object.entries(colorPalette).map(([capacity, color]) => 
