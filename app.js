@@ -176,21 +176,18 @@ function updateStats(features) {
         return sum + (isNaN(numCoffre) ? 0 : numCoffre);
     }, 0);
     
-    const totalCapacity = features.reduce((sum, feature) => {
-        const capacity = parseFloat(feature.properties.Type_Capac);
-        return sum + (isNaN(capacity) ? 0 : capacity);
-    }, 0);
+    // Utilisation de totalCoffre pour le calcul de la capacité totale
+    const capacity = parseFloat(features[0]?.properties.Type_Capac) || 0;
+    const totalCapacity = totalCoffre * capacity;
 
     document.getElementById('total-coffres').textContent = totalCoffres;
     document.getElementById('total-coffre').textContent = totalCoffre.toFixed(0);
     document.getElementById('total-capacity').textContent = totalCapacity.toFixed(1);
-
     // Mise à jour des graphiques
     createCapacityChart(features);
     createStatusChart(features);
     createCommuneChart(features);
     createCapacityCommuneChart(features);
-
 }
 
 // Fonction pour créer le graphique de la capacité
