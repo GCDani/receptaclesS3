@@ -4,6 +4,8 @@ const geoJsonUrl = 'https://raw.githubusercontent.com/GCDani/receptacleseeb/refs
 
 let geoJsonLayer; // Déclaration globale pour le layer GeoJSON
 
+let choroplethLayer;
+
 // Initialisation de la carte Leaflet
 const map = L.map('map').setView([5.275317, -3.939429], 12.5);
 
@@ -116,6 +118,29 @@ map.on('exitFullscreen', function(){
         console.log('La carte a quitté le mode plein écran');
     }
 });
+
+// Ajoutez cette fonction pour obtenir la couleur en fonction de la valeur
+function getColor(d) {
+    return d > 4 ? '#b30000' :
+           d > 3 ? '#e34a33' :
+           d > 2 ? '#fc8d59' :
+           d > 1 ? '#fdcc8a' :
+           d > 0 ? '#fef0d9' :
+           d = 0 ? '#d3d3d3' :
+                   '#d3d3d3';
+}
+
+// Fonction de style pour le choroplèthe
+function choroplethStyle(feature) {
+    return {
+        fillColor: getColor(feature.properties.Num_Coffre_count),
+        weight: 1,
+        opacity: 1,
+        color: '#eaeaea',
+        dashArray: '1',
+        fillOpacity: 0.7
+    };
+}
 
 // ================ FONCTIONS UTILITAIRES ================
 // Fonction pour détruire un graphique existant
@@ -413,6 +438,7 @@ function createDataManager(data, geoJsonLayer) {
 function initializeFilters(data, geoJsonLayer) {
     const dataManager = createDataManager(data, geoJsonLayer);
     
+    // Récupérer les valeurs uniques comme avant
     const communes = new Set();
     const capacities = new Set();
     const platforms = new Set();
@@ -426,6 +452,7 @@ function initializeFilters(data, geoJsonLayer) {
         if (props.Statut) statuses.add(props.Statut);
     });
 
+    // Remplir les sélecteurs
     fillSelect('commune-filter', communes);
     fillSelect('capacity-filter', capacities);
     fillSelect('platform-filter', platforms);
@@ -434,17 +461,19 @@ function initializeFilters(data, geoJsonLayer) {
     // Définir "actif" comme valeur par défaut pour le filtre de statut
     document.getElementById('status-filter').value = 'actif';
     
-    // Appliquer les filtres initiaux
+    // Appliquer les filtres initiaux avec le statut "actif"
     const initialFilters = {
         commune: '',
         capacity: '',
         platform: '',
-        status: 'actif'  // Définir le statut initial comme "actif"
+        status: 'actif'
     };
     
-    // Mettre à jour les données avec le filtre initial
-    dataManager.updateFilters(initialFilters);
+    // Appliquer les filtres et mettre à jour les statistiques initiales
+    const filteredFeatures = dataManager.updateFilters(initialFilters);
+    updateStats(filteredFeatures);
 
+    // Gestionnaire d'événements pour les filtres
     ['commune-filter', 'capacity-filter', 'platform-filter', 'status-filter'].forEach(id => {
         document.getElementById(id).addEventListener('change', () => {
             const filters = {
@@ -563,99 +592,179 @@ function createSearchControl(data, map, dataManager) {
 // ================ CHARGEMENT DES DONNÉES ================
 async function loadGeoJson() {
    try {
-       // Définir une palette de couleurs fixe pour les capacités
-       const colorPalette = {
+
+          // Charger les deux sources de données
+        const [pointsResponse, polygonsResponse] = await Promise.all([
+            fetch(geoJsonUrl),
+            fetch('https://raw.githubusercontent.com/GCDani/receptacleseeb/refs/heads/main/concentrcoffres3.geojson')
+        ]);
+
+        const pointsData = await pointsResponse.json();
+        const polygonsData = await polygonsResponse.json();
+
+        // Filtrer initialement les données pour n'avoir que les sites actifs
+        const activePointsData = {
+            type: 'FeatureCollection',
+            features: pointsData.features.filter(feature => feature.properties.Statut === 'actif')
+        };
+
+        // Définir une palette de couleurs fixe pour les capacités
+        const colorPalette = {
             '20m3': '#026726',
             '5m3': '#8dd018',
             '4m3': '#2abd7a',  
-       };
+        };
 
-       // Fonction de création de légende
-       function createLegend(colorPalette) {
-           const legend = L.control({ position: 'bottomright' });
+        // Créer d'abord la couche choroplèthe
+        const choroplethLayer = L.geoJSON(polygonsData, {
+            style: choroplethStyle,
+            onEachFeature: function(feature, layer) {
+                layer.bindPopup(`
+                    <div style="font-size: 14px; text-align: center;">
+                        Nombre de sites: ${feature.properties.Num_Coffre_count}
+                    </div>
+                `);
+                
+                layer.on({
+                    mouseover: function(e) {
+                        var layer = e.target;
+                        layer.setStyle({
+                            weight: 2,
+                            color: '#2b7490',
+                            dashArray: '',
+                            fillOpacity: 0.8
+                        });
+                    },
+                    mouseout: function(e) {
+                        choroplethLayer.resetStyle(e.target);
+                    }
+                });
+            }
+        }).addTo(map);
 
-           legend.onAdd = function () {
-               const div = L.DomUtil.create('div', 'map-legend');
-               div.innerHTML = `
-                   <div class="legend-section">
-                       <div class="legend-subtitle">Capacités</div>
-                       ${Object.entries(colorPalette).map(([capacity, color]) => 
-                           `<div class="legend-item">
-                               <span class="legend-color" style="background-color: ${color};"></span>
-                               <span class="legend-label">${capacity}</span>
-                           </div>`
-                       ).join('')}
-                   </div>
-                   <div class="legend-section">
-                       <div class="legend-subtitle">Statuts</div>
-                       <div class="legend-item">
-                           <span class="legend-color" style="background-color: #808080;"></span>
-                           <span class="legend-label">Supprimé</span>
-                       </div>
-                   </div>
-               `;
-               return div;
-           };
+        // Créer ensuite la couche des points
+        const geoJsonLayer = L.geoJSON(pointsData, {
+            pointToLayer: (feature, latlng) => {
+                let color;
+                if(feature.properties.Statut === 'supprimé') {
+                    color = '#808080';
+                } else {
+                    const capacity = feature.properties.Type_Capac;
+                    color = colorPalette[capacity] || '#808080';
+                }
+                
+                return L.circleMarker(latlng, {
+                    radius: 6,
+                    fillColor: color,
+                    color: color,
+                    fillOpacity: 1
+                });
+            },
+            onEachFeature: (feature, layer) => {
+                const p = feature.properties;
+                layer.bindPopup(`
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px; text-align: center; 
+                                background-color: #dff7ce; padding: 8px; border-radius: 4px;">
+                        ${p.Nom}
+                    </div>
+                    <div style="font-size: 12px;">
+                        <b>Code complet:</b> ${p.Cod}<br>
+                        <b>N° code:</b> ${p["N° code"]}<br>
+                        <b>Nombre de coffre:</b> ${p.Num_Coffre}<br>
+                        <b>Capacité:</b> ${p.Type_Capac}<br>
+                        <b>Commune:</b> ${p.Commune}<br>
+                        <b>Circuit:</b> ${p.Num_Circuit}<br>
+                        <b>Plateforme:</b> ${p.Plateforme}<br>
+                    </div>
+                `);
+            }
+        }).addTo(map);
 
-           return legend;
-       }
+        // Assurer que les points restent au-dessus
+        geoJsonLayer.bringToFront();
 
-       const response = await fetch(geoJsonUrl);
-       const data = await response.json();
-       const geoJsonLayer = L.geoJSON(data, {
-           pointToLayer: (feature, latlng) => {
-               let color;
-               // Vérifier le statut du coffre
-               if(feature.properties.Statut === 'supprimé') {
-                   color = '#808080'; // Gris pour les coffres supprimés
-               } else {
-                   const capacity = feature.properties.Type_Capac;
-                   color = colorPalette[capacity] || '#808080'; // Couleur selon la capacité pour les coffres actifs
-               }
-               
-               return L.circleMarker(latlng, {
-                   radius: 6,
-                   fillColor: color,
-                   color: color,
-                   fillOpacity: 1
-               });
-           },
-           onEachFeature: (feature, layer) => {
-               const p = feature.properties;
-               layer.bindPopup(`
-                   <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px; text-align: center; 
-                               background-color: #dff7ce; padding: 8px; border-radius: 4px;">
-                       ${p.Nom}
-                   </div>
-                   <div style="font-size: 12px;">
-                       <b>Code complet:</b> ${p.Cod}<br>
-                       <b>N° code:</b> ${p["N° code"]}<br>
-                       <b>Nombre de coffre:</b> ${p.Num_Coffre}<br>
-                       <b>Capacité:</b> ${p.Type_Capac}<br>
-                       <b>Commune:</b> ${p.Commune}<br>
-                       <b>Circuit:</b> ${p.Num_Circuit}<br>
-                       <b>Plateforme:</b> ${p.Plateforme}<br>
-                   </div>
-               `);
-           }
-       }).addTo(map);
- 
-        const dataManager = initializeFilters(data, geoJsonLayer);
-        
-        // Création et ajout de la légende
-        const legend = createLegend(colorPalette);
-        legend.addTo(map);
+        // Ajouter un écouteur d'événements pour le changement de fond de carte
+        map.on('baselayerchange', function() {
+            choroplethLayer.bringToBack();
+            geoJsonLayer.bringToFront();
+        });
+
+        // Légende du choroplèthe
+        const choroplethLegend = L.control({position: 'bottomleft'});
+        choroplethLegend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            const grades = [ 0, 1, 2, 3, 4, 6, ];
+
+            div.innerHTML = '<h4>Nombre de sites</h4>';
+
+            for (let i = 0; i < grades.length; i++) {
+                div.innerHTML +=
+                    '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+                    grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+            }
+
+            return div;
+        };
+        choroplethLegend.addTo(map);
+
+        // Légende des points
+        function createLegend(colorPalette) {
+            const legend = L.control({ position: 'bottomright' });
+            legend.onAdd = function () {
+                const div = L.DomUtil.create('div', 'map-legend');
+                div.innerHTML = `
+                    <div class="legend-section">
+                        <div class="legend-subtitle">Capacités</div>
+                        ${Object.entries(colorPalette).map(([capacity, color]) => 
+                            `<div class="legend-item">
+                                <span class="legend-color" style="background-color: ${color};"></span>
+                                <span class="legend-label">${capacity}</span>
+                            </div>`
+                        ).join('')}
+                    </div>
+                    <div class="legend-section">
+                        <div class="legend-subtitle">Statuts</div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #808080;"></span>
+                            <span class="legend-label">Supprimé</span>
+                        </div>
+                    </div>
+                `;
+                return div;
+            };
+            return legend;
+        }
+
+        // Ajouter les légendes et contrôles
+        const pointsLegend = createLegend(colorPalette);
+        pointsLegend.addTo(map);
 
         L.control.layers(
-            { "OpenStreetMap": osmLayer, "Satellite": satelliteLayer, "CyclOSM":cyclOSMLayer },
-            { "Coffres GeoJSON": geoJsonLayer }
+            { 
+                "OpenStreetMap": osmLayer, 
+                "Satellite": satelliteLayer, 
+                "CyclOSM": cyclOSMLayer 
+            },
+            { 
+                "Sites à coffres": geoJsonLayer,
+                "Densité des sites (1km)": choroplethLayer
+            }
         ).addTo(map);
 
-        const SearchControl = createSearchControl(data, map, dataManager);
+        // Initialiser les filtres et la recherche
+        const dataManager = initializeFilters(pointsData, geoJsonLayer);
+        const SearchControl = createSearchControl(pointsData, map, dataManager);
         map.addControl(new SearchControl());
         
-        // Initialiser les statistiques et les graphiques avec toutes les données
-        updateStats(data.features);
+        // Initialiser les statistiques avec les points actifs
+        updateStats(activePointsData.features);
+
+        // Écouteur pour maintenir l'ordre des couches lors de l'activation/désactivation
+        map.on('overlayadd', function(e) {
+            if (e.name === "Coffres") {
+                geoJsonLayer.bringToFront();
+            }
+        });
 
     } catch (error) {
         console.error('Erreur lors du chargement des données GeoJSON:', error);
